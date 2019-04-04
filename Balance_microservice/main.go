@@ -9,8 +9,9 @@ import (
 	"google.golang.org/grpc"
 	//"github.com/scylladb/gocqlx"
 	//"github.com/scylladb/gocqlx/qb"
+	pb "Moneway_Challenge/Balance_microservice/Proto"
+
 	"github.com/gocql/gocql"
-	pb "github.com/Wraken/Moneway_Challenge/Balance_microservice/Proto"
 )
 
 const (
@@ -27,7 +28,7 @@ func (s *server) GetBalance(ctx context.Context, in *pb.Ping) (*pb.BalanceReply,
 func main() {
 	cluster := gocql.NewCluster("127.0.0.1")
 	cluster.ProtoVersion = 3
-	cluster.ConnectTimeout = time.Second * 4
+	cluster.ConnectTimeout = time.Second * 20
 	cluster.Consistency = gocql.Quorum
 	session, err := cluster.CreateSession()
 	if err != nil {
@@ -36,10 +37,20 @@ func main() {
 	}
 	defer session.Close()
 	log.Println("init db done")
-	const personSchema = `
-	CREATE TABLE IF NOT EXISTS balance (
-    balance int
-	)`
+
+	//create Keyspace
+	err = session.Query("CREATE KEYSPACE IF NOT EXISTS Balance_service WITH REPLICATION = {'class' : 'NetworkTopologyStrategy', 'datacenter1' : 3};").Exec()
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	//create Table
+	err = session.Query("CREATE TABLE IF NOT EXISTS Balance_service.balance (account_id text PRIMARY KEY, balance float);").Exec()
+	if err != nil {
+		log.Println(err)
+		return
+	}
 
 	lis, err := net.Listen("tcp", port)
 	if err != nil {
