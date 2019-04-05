@@ -14,17 +14,12 @@ import (
 	"github.com/gocql/gocql"
 )
 
+//microservice port
 const (
 	port = ":50051"
 )
 
 var session *gocql.Session
-
-type balance struct {
-	accountid   gocql.UUID
-	accountname string
-	balance     float32
-}
 
 type server struct{}
 
@@ -33,17 +28,19 @@ func (s *server) CreditMoney(ctx context.Context, in *pb.Transaction) (*pb.Balan
 	var bal float32
 	var id gocql.UUID
 
+	//get balance in db
 	err := session.Query("SELECT account_id,balance FROM balance_service.balance WHERE account_name = ? allow filtering", in.AccountName).Scan(&id, &bal)
 	if err != nil {
 		log.Println(err)
 	}
 	bal = bal - in.NbMoney
 
+	//Update balance in db
 	err = session.Query("UPDATE balance_service.balance SET balance = ? WHERE account_name = ? and account_id = ?", bal, in.AccountName, id).Exec()
 	if err != nil {
 		log.Println(err)
 	}
-
+	log.Println("Credit")
 	return &pb.BalanceReply{Amount: bal}, nil
 }
 
@@ -51,23 +48,26 @@ func (s *server) DepositMoney(ctx context.Context, in *pb.Transaction) (*pb.Bala
 	var bal float32
 	var id gocql.UUID
 
+	//Get Balance in db
 	err := session.Query("SELECT account_id,balance FROM balance_service.balance WHERE account_name = ? allow filtering", in.AccountName).Scan(&id, &bal)
 	if err != nil {
 		log.Println(err)
 	}
 	bal = bal + in.NbMoney
 
+	//Update balance in db
 	err = session.Query("UPDATE balance_service.balance SET balance = ? WHERE account_name = ? and account_id = ? ", bal, in.AccountName, id).Exec()
 	if err != nil {
 		log.Println(err)
 	}
-
+	log.Println("Deposit")
 	return &pb.BalanceReply{Amount: bal}, nil
 }
 
 func (s *server) GetBalance(ctx context.Context, in *pb.AccountName) (*pb.BalanceReply, error) {
 	var bal float32
 
+	bal = 0
 	err := session.Query("SELECT balance FROM balance_service.balance WHERE account_name = ? allow filtering", in.AccountName).Scan(&bal)
 	if err != nil {
 		log.Println(err)
@@ -105,6 +105,7 @@ func main() {
 		return
 	}
 
+	//Start server
 	lis, err := net.Listen("tcp", port)
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)

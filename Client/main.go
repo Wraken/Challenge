@@ -39,14 +39,14 @@ func main() {
 
 	r, err1 := balanceClient.GetBalance(ctxBalance, &pb_Balance.AccountName{AccountName: "Test"})
 	if err1 != nil {
-		log.Fatalf("could not: %v", err1)
+		log.Printf("could not: %v", err1)
 	}
 	log.Printf("Get Balance response: %f", r.Amount)
 
 	res, err2 := transactionClient.MakeDeposit(ctxBalance, &pb_Transaction.Transaction{
 		ID: "", AccountID: "Test", CreatedAt: 0, Description: "description du test", Amount: 10, Notes: "ceci est un test"})
 	if err2 != nil {
-		log.Fatalf("Could not make transaction: %v", err2)
+		log.Printf("Could not make transaction: %v", err2)
 	}
 
 	log.Printf("Balance after Deposit: %f and status %t", res.Amount, res.State)
