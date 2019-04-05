@@ -3,13 +3,20 @@ syntax = "proto3";
 package balance;
 
 service Balance {
-    rpc GetBalance (Ping) returns (BalanceReply) {}
+    rpc GetBalance (AccountName) returns (BalanceReply) {}
+    rpc CreditMoney (Transaction) returns (BalanceReply) {}
+    rpc DepositMoney (Transaction) returns (BalanceReply) {}
 }
 
-message Ping {
-    string Ping = 1;
+message Transaction {
+    string AccountName = 1;
+    float NbMoney = 2;
+}
+
+message AccountName {
+    string AccountName = 1;
 }
 
 message BalanceReply {
-    int64 Amount = 1;
+    float Amount = 1;
 }

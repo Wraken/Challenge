@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package transaction;
+
+service transaction {
+  rpc MakeDeposit (Transaction) returns (TransactionStatus) {}
+  rpc MakeCredit (Transaction) returns (TransactionStatus) {}
+  rpc ListAllTransaction (AllTransaction) returns (stream Transaction) {}
+}
+
+message AllTransaction {}
+
+message Transaction {
+  string ID = 1;
+  string AccountID = 2;
+  int64 CreatedAt = 3;
+  string Description = 4;
+  float Amount = 5;
+  string Notes = 6;
+}
+
+message TransactionStatus {
+  float Amount = 1;
+  bool State = 2;
+}

@@ -18,19 +18,72 @@ const (
 	port = ":50051"
 )
 
+var session *gocql.Session
+
+type balance struct {
+	accountid   gocql.UUID
+	accountname string
+	balance     float32
+}
+
 type server struct{}
 
-func (s *server) GetBalance(ctx context.Context, in *pb.Ping) (*pb.BalanceReply, error) {
-	log.Printf("Received: %v", in.Ping)
-	return &pb.BalanceReply{Amount: 300}, nil
+func (s *server) CreditMoney(ctx context.Context, in *pb.Transaction) (*pb.BalanceReply, error) {
+
+	var bal float32
+	var id gocql.UUID
+
+	err := session.Query("SELECT account_id,balance FROM balance_service.balance WHERE account_name = ? allow filtering", in.AccountName).Scan(&id, &bal)
+	if err != nil {
+		log.Println(err)
+	}
+	bal = bal - in.NbMoney
+
+	err = session.Query("UPDATE balance_service.balance SET balance = ? WHERE account_name = ? and account_id = ?", bal, in.AccountName, id).Exec()
+	if err != nil {
+		log.Println(err)
+	}
+
+	return &pb.BalanceReply{Amount: bal}, nil
+}
+
+func (s *server) DepositMoney(ctx context.Context, in *pb.Transaction) (*pb.BalanceReply, error) {
+	var bal float32
+	var id gocql.UUID
+
+	err := session.Query("SELECT account_id,balance FROM balance_service.balance WHERE account_name = ? allow filtering", in.AccountName).Scan(&id, &bal)
+	if err != nil {
+		log.Println(err)
+	}
+	bal = bal + in.NbMoney
+
+	err = session.Query("UPDATE balance_service.balance SET balance = ? WHERE account_name = ? and account_id = ? ", bal, in.AccountName, id).Exec()
+	if err != nil {
+		log.Println(err)
+	}
+
+	return &pb.BalanceReply{Amount: bal}, nil
+}
+
+func (s *server) GetBalance(ctx context.Context, in *pb.AccountName) (*pb.BalanceReply, error) {
+	var bal float32
+
+	err := session.Query("SELECT balance FROM balance_service.balance WHERE account_name = ? allow filtering", in.AccountName).Scan(&bal)
+	if err != nil {
+		log.Println(err)
+	}
+
+	return &pb.BalanceReply{Amount: bal}, err
 }
 
 func main() {
+	//db initialisation
 	cluster := gocql.NewCluster("127.0.0.1")
 	cluster.ProtoVersion = 3
 	cluster.ConnectTimeout = time.Second * 20
-	cluster.Consistency = gocql.Quorum
-	session, err := cluster.CreateSession()
+	cluster.Consistency = gocql.One
+	var err error
+	session, err = cluster.CreateSession()
 	if err != nil {
 		log.Println(err)
 		return
@@ -39,14 +92,14 @@ func main() {
 	log.Println("init db done")
 
 	//create Keyspace
-	err = session.Query("CREATE KEYSPACE IF NOT EXISTS Balance_service WITH REPLICATION = {'class' : 'NetworkTopologyStrategy', 'datacenter1' : 3};").Exec()
+	err = session.Query("CREATE KEYSPACE IF NOT EXISTS Balance_service WITH REPLICATION = {'class' : 'SimpleStrategy', 'replication_factor' : 3};").Exec()
 	if err != nil {
 		log.Println(err)
 		return
 	}
 
 	//create Table
-	err = session.Query("CREATE TABLE IF NOT EXISTS Balance_service.balance (account_id text PRIMARY KEY, balance float);").Exec()
+	err = session.Query("CREATE TABLE IF NOT EXISTS Balance_service.balance (account_id uuid, account_name text, balance float, PRIMARY KEY (account_id, account_name));").Exec()
 	if err != nil {
 		log.Println(err)
 		return
