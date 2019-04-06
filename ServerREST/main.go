@@ -54,6 +54,7 @@ func createAccount(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Println(err)
 		json.NewEncoder(w).Encode("Error: failed to create an account")
+		return
 	}
 
 	if res.State == false {
@@ -115,7 +116,7 @@ func getAllTransactions(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(transactions)
 }
 
-func creditAccount(w http.ResponseWriter, r *http.Request) {
+func debitAccount(w http.ResponseWriter, r *http.Request) {
 	//Pars arg from request
 	err := r.ParseForm()
 	if err != nil {
@@ -139,7 +140,7 @@ func creditAccount(w http.ResponseWriter, r *http.Request) {
 
 	//Contact transaction microservice to credit the account
 	res, err := transactionClient.MakeCredit(ctx, &pb_Transaction.Transaction{
-		ID: "", AccountID: r.Form.Get("accountid"), CreatedAt: 0, Description: r.Form.Get("description"), Amount: float32(amount), Notes: r.Form.Get("notes")})
+		ID: "", AccountID: r.Form.Get("accountid"), CreatedAt: 0, Amount: float32(amount), Notes: r.Form.Get("notes")})
 	if err != nil {
 		log.Printf("Could not make transaction: %v", err)
 		json.NewEncoder(w).Encode("Error: deposit failed, checks your params")
@@ -154,11 +155,12 @@ func creditAccount(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(&balance{res.Amount, res.State})
 }
 
-func depositAccount(w http.ResponseWriter, r *http.Request) {
+func creditAccount(w http.ResponseWriter, r *http.Request) {
 	//Pars arg
 	err := r.ParseForm()
 	if err != nil {
 		log.Println(err)
+		return
 	}
 
 	amount, err := strconv.ParseFloat(r.Form.Get("amount"), 32)
@@ -177,7 +179,7 @@ func depositAccount(w http.ResponseWriter, r *http.Request) {
 	}
 	//Contact transaction microservice to make a deposit on the account
 	res, err := transactionClient.MakeDeposit(ctx, &pb_Transaction.Transaction{
-		ID: "", AccountID: r.Form.Get("accountid"), CreatedAt: 0, Description: r.Form.Get("description"), Amount: float32(amount), Notes: r.Form.Get("notes")})
+		ID: "", AccountID: r.Form.Get("accountid"), CreatedAt: 0, Amount: float32(amount), Notes: r.Form.Get("notes")})
 	if err != nil {
 		log.Printf("Could not make transaction: %v", err)
 		json.NewEncoder(w).Encode("Error: deposit failed, checks your params")
@@ -219,8 +221,8 @@ func main() {
 	router.HandleFunc("/balance/{id}", getBalance).Methods("GET")
 	router.HandleFunc("/balance/createaccount", createAccount).Methods("POST")
 	router.HandleFunc("/transactions", getAllTransactions).Methods("GET")
+	router.HandleFunc("/transactions/debitaccount", debitAccount).Methods("POST")
 	router.HandleFunc("/transactions/creditaccount", creditAccount).Methods("POST")
-	router.HandleFunc("/transactions/depositaccount", depositAccount).Methods("POST")
 
 	log.Fatal(http.ListenAndServe(":8000", router))
 }

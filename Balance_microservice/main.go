@@ -42,7 +42,6 @@ func (s *server) CreditMoney(ctx context.Context, in *pb.Transaction) (*pb.Balan
 		log.Println(err)
 		return &pb.BalanceReply{Amount: bal, State: false}, err
 	}
-	log.Println("Credit")
 	return &pb.BalanceReply{Amount: bal, State: true}, nil
 }
 
@@ -50,7 +49,6 @@ func (s *server) DepositMoney(ctx context.Context, in *pb.Transaction) (*pb.Bala
 	var bal float32
 	var id gocql.UUID
 
-	log.Println(in.AccountName)
 	//Get Balance in db
 	err := session.Query("SELECT account_id,balance FROM balance_service.balance WHERE account_name = ? allow filtering", in.AccountName).Scan(&id, &bal)
 	if err != nil {
@@ -66,7 +64,6 @@ func (s *server) DepositMoney(ctx context.Context, in *pb.Transaction) (*pb.Bala
 		log.Println(err)
 		return &pb.BalanceReply{Amount: bal, State: false}, nil
 	}
-	log.Println("Deposit")
 	return &pb.BalanceReply{Amount: bal, State: true}, nil
 }
 

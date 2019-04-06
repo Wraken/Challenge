@@ -31,6 +31,7 @@ var session *gocql.Session
 
 type server struct{}
 
+//Credit account balance and register the transaction
 func (s *server) MakeDeposit(ctx context.Context, in *pb.Transaction) (*pb.TransactionStatus, error) {
 	//Contact Balance service to update the balance
 	Ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -49,7 +50,7 @@ func (s *server) MakeDeposit(ctx context.Context, in *pb.Transaction) (*pb.Trans
 	uuid, _ := gocql.RandomUUID()
 	now := time.Now()
 	err = session.Query(`INSERT INTO Transaction_service.transaction (TransactionID, AccountName, CreatedAt, Description, Amount, Notes) VALUES (?, ?, ?, ?, ?, ?)`,
-		uuid, in.AccountID, now, in.Description, in.Amount, in.Notes).Exec()
+		uuid, in.AccountID, now, "Credit", in.Amount, in.Notes).Exec()
 
 	if err != nil {
 		log.Println(err)
@@ -59,6 +60,7 @@ func (s *server) MakeDeposit(ctx context.Context, in *pb.Transaction) (*pb.Trans
 	return &pb.TransactionStatus{Amount: r.Amount, State: true}, nil
 }
 
+//Debit account balance and register the Transaction
 func (s *server) MakeCredit(ctx context.Context, in *pb.Transaction) (*pb.TransactionStatus, error) {
 	//Contact Balance service to update the balance
 	Ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -77,7 +79,7 @@ func (s *server) MakeCredit(ctx context.Context, in *pb.Transaction) (*pb.Transa
 	uuid, _ := gocql.RandomUUID()
 	now := time.Now()
 	err = session.Query(`INSERT INTO Transaction_service.transaction (TransactionID, AccountName, CreatedAt, Description, Amount, Notes) VALUES (?, ?, ?, ?, ?, ?)`,
-		uuid, in.AccountID, now, in.Description, in.Amount, in.Notes).Exec()
+		uuid, in.AccountID, now, "Debit", -in.Amount, in.Notes).Exec()
 
 	if err != nil {
 		log.Println(err)
