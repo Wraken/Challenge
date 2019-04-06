@@ -6,6 +6,7 @@ service Balance {
     rpc GetBalance (AccountName) returns (BalanceReply) {}
     rpc CreditMoney (Transaction) returns (BalanceReply) {}
     rpc DepositMoney (Transaction) returns (BalanceReply) {}
+    rpc createAccount (AccountName) returns (BalanceReply) {}
 }
 
 message Transaction {
@@ -19,4 +20,5 @@ message AccountName {
 
 message BalanceReply {
     float Amount = 1;
+    bool state = 2;
 }

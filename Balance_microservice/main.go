@@ -32,6 +32,7 @@ func (s *server) CreditMoney(ctx context.Context, in *pb.Transaction) (*pb.Balan
 	err := session.Query("SELECT account_id,balance FROM balance_service.balance WHERE account_name = ? allow filtering", in.AccountName).Scan(&id, &bal)
 	if err != nil {
 		log.Println(err)
+		return &pb.BalanceReply{Amount: 0, State: false}, err
 	}
 	bal = bal - in.NbMoney
 
@@ -39,29 +40,34 @@ func (s *server) CreditMoney(ctx context.Context, in *pb.Transaction) (*pb.Balan
 	err = session.Query("UPDATE balance_service.balance SET balance = ? WHERE account_name = ? and account_id = ?", bal, in.AccountName, id).Exec()
 	if err != nil {
 		log.Println(err)
+		return &pb.BalanceReply{Amount: bal, State: false}, err
 	}
 	log.Println("Credit")
-	return &pb.BalanceReply{Amount: bal}, nil
+	return &pb.BalanceReply{Amount: bal, State: true}, nil
 }
 
 func (s *server) DepositMoney(ctx context.Context, in *pb.Transaction) (*pb.BalanceReply, error) {
 	var bal float32
 	var id gocql.UUID
 
+	log.Println(in.AccountName)
 	//Get Balance in db
 	err := session.Query("SELECT account_id,balance FROM balance_service.balance WHERE account_name = ? allow filtering", in.AccountName).Scan(&id, &bal)
 	if err != nil {
 		log.Println(err)
+		return &pb.BalanceReply{Amount: 0, State: false}, err
 	}
+
 	bal = bal + in.NbMoney
 
 	//Update balance in db
 	err = session.Query("UPDATE balance_service.balance SET balance = ? WHERE account_name = ? and account_id = ? ", bal, in.AccountName, id).Exec()
 	if err != nil {
 		log.Println(err)
+		return &pb.BalanceReply{Amount: bal, State: false}, nil
 	}
 	log.Println("Deposit")
-	return &pb.BalanceReply{Amount: bal}, nil
+	return &pb.BalanceReply{Amount: bal, State: true}, nil
 }
 
 func (s *server) GetBalance(ctx context.Context, in *pb.AccountName) (*pb.BalanceReply, error) {
@@ -71,9 +77,32 @@ func (s *server) GetBalance(ctx context.Context, in *pb.AccountName) (*pb.Balanc
 	err := session.Query("SELECT balance FROM balance_service.balance WHERE account_name = ? allow filtering", in.AccountName).Scan(&bal)
 	if err != nil {
 		log.Println(err)
+		return &pb.BalanceReply{Amount: 0, State: false}, err
 	}
 
-	return &pb.BalanceReply{Amount: bal}, err
+	return &pb.BalanceReply{Amount: bal, State: true}, err
+}
+
+func (s *server) CreateAccount(ctx context.Context, in *pb.AccountName) (*pb.BalanceReply, error) {
+	var name string
+
+	err := session.Query("SELECT account_name FROM balance_service.balance WHERE account_name = ? allow filtering", in.AccountName).Scan(&name)
+	if err != nil {
+		log.Println(err)
+	}
+
+	if name != "" {
+		return &pb.BalanceReply{Amount: 0, State: false}, err
+	}
+
+	uuid, _ := gocql.RandomUUID()
+	err = session.Query("INSERT INTO balance_service.balance(account_id,account_name,balance) VALUES(?,?,?)", uuid, in.AccountName, float32(0)).Exec()
+	if err != nil {
+		log.Println(err)
+		return &pb.BalanceReply{Amount: 0, State: false}, err
+	}
+
+	return &pb.BalanceReply{Amount: 0, State: true}, nil
 }
 
 func main() {

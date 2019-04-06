@@ -41,6 +41,10 @@ func (s *server) MakeDeposit(ctx context.Context, in *pb.Transaction) (*pb.Trans
 		return &pb.TransactionStatus{Amount: 0, State: false}, nil
 	}
 
+	if r.State == false {
+		return &pb.TransactionStatus{Amount: 0, State: false}, nil
+	}
+
 	//Add transtaction in db
 	uuid, _ := gocql.RandomUUID()
 	now := time.Now()
@@ -62,6 +66,11 @@ func (s *server) MakeCredit(ctx context.Context, in *pb.Transaction) (*pb.Transa
 	r, err := balanceCom.CreditMoney(Ctx, &pb_balance.Transaction{AccountName: in.AccountID, NbMoney: in.Amount})
 	if err != nil {
 		log.Println(err)
+		return &pb.TransactionStatus{Amount: 0, State: false}, nil
+	}
+
+	if r.State == false {
+		return &pb.TransactionStatus{Amount: 0, State: false}, nil
 	}
 
 	//Add transtaction in db
