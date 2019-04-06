@@ -15,3 +15,11 @@ POST /balance/createaccount params {accountname: name of the new account} : crea
 POST /transactions/debitaccount params {accountid: name of the account, amount: amout, notes: notes} : Create a transaction and debit the balance of the account
 
 POST /transactions/creditaccount params {accountid: name of the account, amount: amout, notes: notes} : Create a transaction and credit the balance of the account
+
+Run:
+
+go run Balance_microservice/main.go
+
+go run Transaction_microservice/main.go
+
+go run ServerREST/main.go
