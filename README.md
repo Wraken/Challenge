@@ -12,6 +12,6 @@ GET /transactions : return all transactions
 
 POST /balance/createaccount params {accountname: name of the new account} : create an account on balance service
 
-POST /transactions/debitaccount params {accountid: name of the account, amount: amout, notes: notes} : Debit money the account
+POST /transactions/debitaccount params {accountid: name of the account, amount: amout, notes: notes} : Create a transaction and debit the balance of the account
 
-POST /transactions/creditaccount params {accountid: name of the account, amount: amout, notes: notes} : Credit money to the account
+POST /transactions/creditaccount params {accountid: name of the account, amount: amout, notes: notes} : Create a transaction and credit the balance of the account
