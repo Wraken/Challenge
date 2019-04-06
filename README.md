@@ -14,7 +14,7 @@ POST /balance/createaccount params {accountname: name of the new account} : crea
 
 POST /transactions/creditaccount params {accountid: name of the account, 
                                         description: description, 
-                                        amount: amout, notes: notes} : Credit the account 
+                                        amount: amout, notes: notes} : Debit the account 
                                         
 POST /transactions/depositaccount params {accountid: name of the account, 
                                         description: description, 
