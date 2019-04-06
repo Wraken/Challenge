@@ -74,6 +74,7 @@ func (s *server) GetBalance(ctx context.Context, in *pb.AccountName) (*pb.Balanc
 	var bal float32
 
 	bal = 0
+	//Get Balance in db
 	err := session.Query("SELECT balance FROM balance_service.balance WHERE account_name = ? allow filtering", in.AccountName).Scan(&bal)
 	if err != nil {
 		log.Println(err)
@@ -86,6 +87,7 @@ func (s *server) GetBalance(ctx context.Context, in *pb.AccountName) (*pb.Balanc
 func (s *server) CreateAccount(ctx context.Context, in *pb.AccountName) (*pb.BalanceReply, error) {
 	var name string
 
+	//Check if the account already exist in db
 	err := session.Query("SELECT account_name FROM balance_service.balance WHERE account_name = ? allow filtering", in.AccountName).Scan(&name)
 	if err != nil {
 		log.Println(err)
@@ -96,6 +98,7 @@ func (s *server) CreateAccount(ctx context.Context, in *pb.AccountName) (*pb.Bal
 	}
 
 	uuid, _ := gocql.RandomUUID()
+	//Create an account in db if it doesn't exist
 	err = session.Query("INSERT INTO balance_service.balance(account_id,account_name,balance) VALUES(?,?,?)", uuid, in.AccountName, float32(0)).Exec()
 	if err != nil {
 		log.Println(err)
@@ -118,7 +121,6 @@ func main() {
 		return
 	}
 	defer session.Close()
-	log.Println("init db done")
 
 	//create Keyspace
 	err = session.Query("CREATE KEYSPACE IF NOT EXISTS Balance_service WITH REPLICATION = {'class' : 'SimpleStrategy', 'replication_factor' : 3};").Exec()

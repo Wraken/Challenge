@@ -96,6 +96,7 @@ func (s *server) ListAllTransaction(in *pb.AllTransaction, stream pb.Transaction
 	var createdAt int64
 	var amount float32
 
+	//Send all transactions in stream
 	for iter.Scan(&transactionID, &accName, &createdAt, &desc, &amount, &notes) {
 		if err := stream.Send(&pb.Transaction{ID: transactionID, AccountID: accName, CreatedAt: createdAt, Description: desc, Amount: amount, Notes: notes}); err != nil {
 			log.Println(err)
@@ -107,6 +108,7 @@ func (s *server) ListAllTransaction(in *pb.AllTransaction, stream pb.Transaction
 }
 
 func main() {
+	//Db initialisation
 	cluster := gocql.NewCluster("127.0.0.1")
 	cluster.ProtoVersion = 3
 	cluster.ConnectTimeout = time.Second * 20
@@ -118,7 +120,6 @@ func main() {
 		return
 	}
 	defer session.Close()
-	log.Println("init db done")
 
 	//create Keyspace
 	err = session.Query("CREATE KEYSPACE IF NOT EXISTS Transaction_service WITH REPLICATION = {'class' : 'SimpleStrategy', 'replication_factor' : 3};").Exec()
