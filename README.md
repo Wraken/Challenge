@@ -1,7 +1,6 @@
 # Moneway_Challenge
 Challenge moneway
 
-Topology
 ![Alt text](Misc/Topology.png?raw=true "Topology")
 
 
